@@ -4,6 +4,12 @@ Mumbai 2044: a laser turret has to hit a maneuvering V-44 drone using noisy rada
 
 **Deadline:** November 10, 2026, 11:59 PM
 
+> ### Note for Claude (or any AI assistant used by a team member)
+> - **Do not make crucial design decisions on your own.** Model choices, tuning values, interfaces between team members, and anything another member depends on are the user's (and the team's) call.
+> - **Always ask before choosing a design.** Lay out the options, with their trade-offs and test evidence, in simple words, and let the user decide.
+> - **Explain everything nicely.** Assume the user wants to understand why, not just get code.
+> - **Don't silently change decisions already recorded** in this README, `TUNABLE_PARAMETERS.md`, or the team's work-split document. If something looks wrong, flag it to the user instead of fixing it yourself.
+
 ## The 4 Parts of the Assignment
 
 | # | Part | Takes in | Gives out |
@@ -34,11 +40,19 @@ Our aim angle is where the drone will be **0.5 s from now**. If the turret takes
 
 The turret by itself does not have to be that slow. Some ways to get a total of 0.5 s:
 
-- **Option A: one slow turret.** Make the turret itself slow enough to lag 0.5 s. This is simple, but it follows curves badly and lets more noise through.
-- **Option B: fast turret plus smoothing.** Make the turret fast (for example 0.07 s), then add smoothing steps before it to make up the remaining 0.43 s. The smoothing also cleans up the noise.
-- **Option C: fast turret with nothing added.** This is wrong. The turret points ahead of the drone and misses by tens of metres.
+- **Way 1: one slow turret.** Make the turret itself slow enough to lag 0.5 s. This is simple, but it follows curves badly and lets more noise through.
+- **Way 2: fast turret plus smoothing.** Make the turret fast (for example 0.07 s), then add smoothing steps before it to make up the remaining 0.43 s. The smoothing also cleans up the noise. This is the team's chosen design (decision D4 in the work-split document).
+- **Way 3: fast turret with nothing added.** This is wrong. The turret points ahead of the drone and misses by tens of metres.
 
-In a quick test, Option B kept the turret on target about 85–98% of the time, Option A about 58–67%, and Option C almost never.
+In a quick test, Way 2 kept the turret on target about 85–98% of the time, Way 1 about 58–67%, and Way 3 almost never. (These are named "ways" so they don't get confused with the work-split document's Options A and B, which mean something else.)
+
+**Matching rule (decision D2):** the smoothing must exactly undo the prediction's lead. Our prediction is θ_pred = θ̂ + 0.5·θ̂̇ (current angle plus 0.5 s × angular speed), so the whole path from reference to turret must behave like 1/(1 + 0.5 s). Then the lead and the lag cancel, and the turret ends up pointing at our **current** best estimate of the drone, built from the newest radar reading.
+
+This beats aiming at a true 0.5 s forecast: in a quick test, even the best forecast was within 2 m only about 60–70% of the time, while the matched turret was on target about 94–100% of the time. Adding an acceleration term to the lead did not help. The estimator still tracks acceleration internally, so θ̂ and θ̂̇ stay correct during turns.
+
+**Decision: the predictor uses n = 1 only** (θ̂ + 0.5·θ̂̇, no acceleration term).
+
+> **⚠ Flag for testing:** this was decided from a Python test with an ideal turret (no voltage limit, turret starting aligned). Once the full MATLAB chain runs, re-check it. If n = 1 turns out clearly bad in any test case (especially the worst case), test **n = 2** (θ̂ + 0.5·θ̂̇ + c·θ̂̈, with c = 0.125 for the acceleration model, or the matching c for Singer). The turret path would then have to match 1/(1 + 0.5 s + c s²).
 
 ### 4. The −10° to +85° limit
 
