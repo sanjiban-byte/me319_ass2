@@ -108,4 +108,24 @@ The instructor's evaluation cases arrive only before the deadline, and **we are 
 ## Files
 
 - `Assignment_2_ME_319_Control_Systems_S3.pdf`: the assignment
-- MATLAB code: to be added (`target_motion_generator.m`, `turret_controller.m`, `turret_plant.m`)
+- `TUNABLE_PARAMETERS.md`: every design parameter we tune, its value, how it was chosen, and the test results behind it
+- `estimator_step.m`: estimator and predictor (Part 1). Called once per controller call; returns the current target estimate, the predicted elevation reference `theta_pred` and its uncertainty.
+- `estimator_tests/`: tests for Part 1
+  - `make_test_drones.m`: synthetic drone paths (12 types, all within the PDF limits, including blackouts)
+  - `test_estimator.m`: scores any list of estimator settings on those drones and writes result tables
+  - `check_estimator.m`: quick correctness checks (prints PASS/FAIL)
+  - `run_estimator_sweeps.m`: reproduces every table in `estimator_tests/results/`
+  - `results/`: the result tables (`.md`)
+- Still to be added by the team: `params.m`, `turret_plant.m`, `turret_controller.m`, `target_motion_generator.m` and the full-system scripts
+
+## How to reproduce
+
+Requires MATLAB (tested on R2025a, no toolboxes). `params.m` must be in the repository root, because every file reads its constants from it.
+
+Estimator and predictor (Part 1), from the repository root in MATLAB:
+
+```matlab
+cd estimator_tests
+check_estimator          % correctness checks, about 10 s
+run_estimator_sweeps     % all result tables in estimator_tests/results/, about 10 min
+```
