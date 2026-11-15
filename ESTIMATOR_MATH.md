@@ -191,7 +191,7 @@ $$
 \text{n = 2 fallback (flagged, not used):}\quad \theta_{\text{pred}} = \hat\theta + t_p\,\hat{\dot\theta} + c_2\,\hat{\ddot\theta}, \quad c_2 = t_p^2/2
 $$
 
-It is not clamped; the −10°…85° clamp is Harsh's (D6).
+It is not clamped; the −10°…85° clamp is done in the reference shaper (D6).
 
 For plots only, the Cartesian forecast of where the drone will be: $\hat{\mathbf{x}}(t + t_p) = \mathbf{F}(t_p)\,\hat{\mathbf{x}}$.
 
@@ -207,7 +207,7 @@ $$
 
 ## A10. Why this predictor works (the pairing with the turret)
 
-Harsh and Jithu build the turret path so that, from θ_pred to the turret angle, it behaves like
+The turret side (prefilter and feedback loop) is built so that, from θ_pred to the turret angle, it behaves like
 
 $$
 H(s) = \frac{1}{1 + t_p s}
@@ -375,18 +375,18 @@ If |d̂| ≥ R_eng, one edge of the circle is on or behind the estimate, so P_hi
 | r̂ | `est.r_hat` | Estimated range now | m | Out → fire rule |
 | θ̂ | `est.theta_hat` | Estimated elevation now | rad | Out → fire rule, prefilter start |
 | ṙ̂ | `rd` | Range rate | m/s | Int |
-| θ̂̇ | `est.theta_dot_hat` | Elevation rate | rad/s | Out → Harsh (prefilter start) |
+| θ̂̇ | `est.theta_dot_hat` | Elevation rate | rad/s | Out → prefilter start |
 | θ̂̈ | `est.theta_ddot_hat` | Elevation acceleration | rad/s² | Out (n = 2 fallback, plots) |
 | u⊥ | `u` | Unit vector across the beam | - | Int |
 | σ⊥ | `est.sigma_cross` | 1-σ sideways position uncertainty now | m | Out → fire rule |
-| θ_pred | `est.theta_pred` | Predicted elevation reference, unclamped | rad | Out → Harsh (prefilter input) |
-| n | `est.n` | Predictor order used (1) | - | Out → Harsh (prefilter must match) |
+| θ_pred | `est.theta_pred` | Predicted elevation reference, unclamped | rad | Out → prefilter input |
+| n | `est.n` | Predictor order used (1) | - | Out → prefilter (order must match) |
 | x̂(t + t_p) | `est.pos_pred` | Cartesian forecast 0.5 s ahead | m | Out (plots only) |
 | N_upd | `est.n_updates` | Readings used so far | - | Out |
 | t − t_last | `est.t_since_meas` | Time since the last reading used | s | Out |
-| valid | `est.valid` | Track has settled; safe to start the prefilter and fire | - | Out → Harsh |
+| valid | `est.valid` | Track has settled; safe to start the prefilter and fire | - | Out → prefilter, fire rule |
 | coasting | `est.coasting` | No reading for longer than Δ_coast (blackout) | - | Out → logging |
-| H(s) | - | Required response from θ_pred to the turret angle | - | Harsh and Jithu's side |
+| H(s) | - | Required response from θ_pred to the turret angle | - | Turret side |
 | d | - | True sideways miss of the beam (unknown to us) | m | Hit condition |
 | θ_turret | `theta_turret` | Turret elevation, known exactly | rad | In to `turret_controller`; used by the fire rule |
 | d̂ | - | Our estimated sideways miss, r̂·sin(θ_turret − θ̂) | m | Fire rule |

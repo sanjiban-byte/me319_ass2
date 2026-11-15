@@ -241,7 +241,7 @@ Report it for normal tracking and for blackout windows separately. If c₁ and c
 
   Result on Train-G: **p* = 0.95** (0.95 to 0.995 all gave zero misses; 0.95 had the earliest first hits). See `results/compare_designs.md`.
 - **Checked on test.** Report M1-M4 at the fitted p*, and at p* ± 0.05 to show how sensitive the results are.
-- **p* must be fitted with the real turret path in the loop** (Harsh's and Jithu's parts). With an ideal turret, d̂ stays near 0 and p* would barely matter.
+- **p* must be fitted with the real turret path in the loop** (prefilter and feedback loop). With an ideal turret, d̂ stays near 0 and p* would barely matter.
 
 ---
 

@@ -1,115 +1,107 @@
-# ME319 Assignment 2: Predictive Tracking and Turret Control for a Maneuvering Aerial Target
+# Predictive Tracking and Lag-Matched Turret Control
 
-Guardian point-defense turret vs the V-44 drone (2-D elevation plane). The
-team: Jithu (turret plant, feedback controller, analysis), Harsh (reference
-shaping, firing logic, simulation harness), Sanjiban (target-state estimation
-and prediction, paper). The problem statement is
-`Assignment_2_ME_319_Control_Systems_S3.pdf`.
+ME319 Control Systems, Assignment 2 (IIT Bombay, Autumn 2026). MATLAB code for a laser turret that tracks and fires at a maneuvering V-44 drone, using noisy 20 Hz radar readings that can black out for up to 0.5 s.
 
-> ### Note for Claude (or any AI assistant used by a team member)
-> - **Do not make important design decisions on your own.** Model choices, tuning values, interfaces between team members, and anything another member depends on are the user's (and the team's) call.
-> - **Always ask before choosing a design.** Lay out the options, with their trade-offs and test evidence, in simple words, and let the user decide.
-> - **Explain everything nicely.** Assume the user wants to understand why, not just get code.
-> - **Don't silently change decisions already recorded** in this README, `params.m`, `TUNABLE_PARAMETERS.md`, `ESTIMATOR_MATH.md`, `TESTING_VALIDATION_METRICS.md` or the team's pipeline document. If something looks wrong, flag it to the user instead of fixing it yourself.
-
-## 1. What the system does
+## What it does
 
 ```
 radar (r, θ, 20 Hz, noisy, may black out)
-  → estimator_step   Kalman filter in (x, y), Singer model    → θ̂, r̂, θ̂̇, σ_cross
-  → predictor        θ_pred = θ̂ + t_p·θ̂̇, t_p = 0.5 s          (order n = 1)
-  → reference_shaper prefilter F(z) with one zero (pole 0.52 s, zero 0.145 s), clamp −10°…85°
-  → feedback_step    G_c = K_P·N(s): K_P = 8012 V/rad → ±600 V → notch N(z)
-  → turret_plant     motor + 100:1 gear + turret, hard stops
-  fire_logic (alongside): pulse when the track is valid, |d̂| < 2 m and P(hit) ≥ 0.95, ≥ 1.01 s since the last pulse
+  → estimator_step     Kalman filter in (x, y), Singer acceleration model → θ̂, r̂, θ̂̇, σ_cross
+  → predictor          θ_pred = θ̂ + t_p·θ̂̇, t_p = 0.5 s
+  → reference_shaper   prefilter F(z) with one pole and one zero, clamp to -10°…85°
+  → feedback_step      G_c = K_P·N(s): gain 8012 V/rad → ±600 V → notch on the 56 rad/s mode
+  → turret_plant       DC motor + 100:1 gearbox + turret, hard stops at -10° and +85°
+  fire_logic           pulse when the track is valid, |d̂| < 2 m and P_hit ≥ 0.95, at least 1.01 s apart
 ```
 
-**Core idea.** The laser is instantaneous, so the turret must point at where
-the target is *now*.
-* The predictor adds a 0.5 s lead (θ̂ + 0.5 θ̂̇).
-* The prefilter and feedback loop together add exactly 0.5 s of lag: F·T ≈ 1/(1 + 0.5 s).
-* The two cancel, so the turret points at the current estimate θ̂(t).
-* The fast inner loop (K_v = 8 1/s, about 0.125 s of lag) handles acquisition; the prefilter supplies the rest.
-* The prefilter has one zero (D38), so the cancellation is exact up to s² on the real sampled loop. The earlier first-order prefilter left a 0.046·r·θ̈ pointing error (D33).
-* The math of the estimator, predictor and firing rule is in `ESTIMATOR_MATH.md`; the data sets and metrics are in `TESTING_VALIDATION_METRICS.md`.
-* All controller blocks are LTI and update on a 50 ms grid aligned with the radar.
+The predictor adds 0.5 s of lead. The prefilter and feedback loop together add 0.5 s of lag, so the two cancel and the turret points at the current estimate of the drone when the (instantaneous) laser fires. All controller blocks update on a 50 ms grid aligned with the radar. The main design choices and their evidence are in [`DESIGN_DECISIONS.md`](DESIGN_DECISIONS.md).
 
-Every design decision, with its reasoning, is in the team's pipeline document
-(in the handover package: `02_pipeline/PIPELINE_full.md`).
+## Requirements
 
-## 2. Required functions (assignment section 3)
+- MATLAB (tested on R2025a). The simulation, controller and evaluation code use base MATLAB only.
+- Control System Toolbox, only for `design_controller.m` and `sensitivity_analysis.m`.
+- Python 3 with matplotlib, only to redraw the two diagrams.
 
-| Function | File | Notes |
-|---|---|---|
-| `[r_meas, theta_meas, meas_valid] = target_motion_generator(t, scenario)` | `target_motion_generator.m` | `scenario` = `'A'`, `'B'`, `'C'`, an integer id (random cases 4…; 1000+k = case k with a forced 0.5 s blackout) or a struct from `scenario_library.m`. White radar noise, one draw per 20 Hz sample; `meas_valid = false` between samples and in blackouts. |
-| `[V_m, fire_cmd] = turret_controller(t, r_meas, theta_meas, meas_valid, theta_turret, theta_dot_turret)` | `turret_controller.m` | Calls `estimator_step` → `reference_shaper` → `feedback_step` → `fire_logic`. Safe when called from an ODE solver: repeated or slightly earlier times return the held outputs, and a backward jump of more than 0.5 s starts a new run. |
-| `[theta_dot_turret, theta_ddot_turret, i_dot] = turret_plant(t, V_m, theta_turret, theta_dot_turret, i)` | `turret_plant.m` | First-principles electrical + mechanical model with rigid stops at −10° and +85°. The voltage limit is applied in the controller, not here. |
-
-All constants are in `params.m` (the only place they are defined). The frozen
-values are marked FROZEN there.
-
-## 3. Requirements
-
-* MATLAB (tested R2025a). Base MATLAB for everything except
-  `design_controller.m` and `sensitivity_analysis.m`, which need the Control
-  System Toolbox. The core code also runs in GNU Octave 8 (used for
-  cross-checks), but the reported numbers and figures are from MATLAB.
-* Python 3 with matplotlib, only to redraw the two diagrams (`docs/diagrams/make_diagrams.py`).
-
-## 4. Reproducing every reported result
+## Quick start
 
 From the repository root in MATLAB:
 
 ```matlab
 addpath(pwd); addpath('tools');
+R = run_scenario('B');      % Scenario A, B or C; 10 s closed-loop run
+print_metrics(R);           % hits, first-hit time, tracking error, peak V and I
+plot_scenario(R);           % range, elevation, pointing error with pulses, voltage, current
 ```
 
-| Result | Command | Output | Time |
+## Required functions (assignment section 3)
+
+| Function | File |
+|---|---|
+| `[r_meas, theta_meas, meas_valid] = target_motion_generator(t, scenario)` | `target_motion_generator.m` (scenario `'A'`, `'B'`, `'C'`, an integer id for random cases, or a struct from `scenario_library.m`) |
+| `[V_m, fire_cmd] = turret_controller(t, r_meas, theta_meas, meas_valid, theta_turret, theta_dot_turret)` | `turret_controller.m` |
+| `[theta_dot_turret, theta_ddot_turret, i_dot] = turret_plant(t, V_m, theta_turret, theta_dot_turret, i)` | `turret_plant.m` |
+
+All constants and design values are in `params.m`. **Before running `turret_controller` from your own evaluation script, read [`NOTE.md`](NOTE.md)**: it lists how the controller expects to be called and what it assumes.
+
+## Reproducing the results in the paper
+
+Run from the repository root after `addpath(pwd); addpath('tools');`. Every script below writes its own outputs; the committed figures and tables were produced exactly this way.
+
+| Paper item | Command | Output | Time |
 |---|---|---|---|
-| Plant and loop checks (eigenvalues, open-loop step, hard stop, closed-loop step / slew / ramp) | `check_turret_plant` | Command Window (PASS/FAIL) + 4 figures | < 1 min |
-| Controller design: margins, sampled margins, ±20 % robustness, Bode, root locus, step/ramp | `design_controller` | `figures/bode_loop.png`, `root_locus.png`, `step_ramp.png` | seconds |
-| Sensitivity analysis A1-A4, B, and the closed-loop error budget A1b | `sensitivity_analysis` | `figures/sens_FT.png`, `sens_recovery.png`, `sens_acquisition.png` | < 1 min |
-| Scenarios A-C, initial-angle sweep, 25 random cases, prefilter unit test | `run_all` | `figs/scenario_*.png`, `results/summary.csv`, `theta0_sweep.csv`, `random_cases.csv` | ~1 min |
-| Figures A-C only | `for s = 'ABC', R = run_scenario(s); plot_scenario(R, fullfile('figs', ['scenario_' s '.png'])); end` | `figs/` | ~10 s |
-| Train-G study: P_hit threshold sweep, reset on/off, threshold selection, train metrics (115 cases) | `compare_designs` | `results/compare_designs.md`, `results/train_metrics.md` + CSVs + logs | ~2 min |
-| Reset ON vs OFF, case by case (needs `compare_designs` first) | `pair_reset` | Command Window | seconds |
-| Solver-style call robustness | `test_call_robustness` | Command Window | ~1 min |
-| Test and validation (46 + 160 runs) with metrics | `evaluate_tvt` | `results/TVT_report.md`, `results/test_metrics.md`, `results/val_metrics.md`, CSVs, `figures/tvt_tstat.png` | ~2 min |
-| Estimator checks and tuning tables (Sanjiban) | `cd estimator_tests; check_estimator; run_estimator_sweeps` | `estimator_tests/results/` | ~10 min |
-| Block diagram and drive schematic | `python3 docs/diagrams/make_diagrams.py` | `docs/diagrams/*.png/pdf/svg` | seconds |
+| Fig. 1 (schematic), Fig. 2 (block diagram) | `cd docs/diagrams; python make_diagrams.py` (in a shell) | `docs/diagrams/*.png/pdf/svg` | seconds |
+| Table I (margins), Fig. 3 (root loci) | `design_controller` | Command Window, `figures/root_locus.png`, `bode_loop.png`, `step_ramp.png` | seconds |
+| Fig. 4, Sec. IV-C to IV-E numbers (noise gains, recovery step, acquisition), error budget in Table III | `sensitivity_analysis` | Command Window, `figures/sens_*.png` | < 1 min |
+| Table II (estimator selection) | `cd estimator_tests; run_estimator_sweeps; cd ..` | `estimator_tests/results/*.md` | ~10 min |
+| Table III, Fig. 5, initial-angle sweep, random cases | `run_all` | `figs/scenario_*.png`, `results/summary.csv`, `theta0_sweep.csv`, `random_cases.csv` | ~1 min |
+| Threshold sweep and selection, prefilter restart study, Table V (train) | `compare_designs` | `results/compare_designs.md`, `results/train_metrics.md`, CSVs | ~2 min |
+| Sec. IV-E restart ON vs OFF, case by case (after `compare_designs`) | `pair_reset` | Command Window | seconds |
+| Table V (test, validation), Fig. 6 | `evaluate_tvt` | `results/TVT_report.md`, `results/test_metrics.md`, `results/val_metrics.md`, `figures/tvt_tstat.png` | ~2 min |
+| Table IV, first-order column | Set `p.prefilter_zero = false` in `params.m`, run `clear params`, then `run_all` and `sensitivity_analysis`; set it back to `true` afterwards | as above | ~2 min |
 
-The figures and result files in this repository were produced exactly this
-way (MATLAB R2025a, 15 Nov 2026).
+Correctness checks:
 
-## 5. File map
+| Check | Command |
+|---|---|
+| Estimator (7 checks, PASS/FAIL) | `cd estimator_tests; check_estimator; cd ..` |
+| Prefilter design (lag cancellation up to s², time-domain test) | `test_shaper` |
+| Same pulses under solver-style calls (repeats, small steps back) | `test_call_robustness` |
+| Plant model (eigenvalues, open-loop step, hard stop) | `check_turret_plant` |
 
-| File | Owner | Role |
-|---|---|---|
-| `params.m` | Jithu (+ Harsh's T2 block) | All constants and design values; `params('override', s)` is used by the study scripts only. |
-| `turret_plant.m`, `feedback_step.m` | Jithu | Plant model; feedback controller G_c = K_P·N with ±600 V and the D19 hold rule. |
-| `design_controller.m`, `sensitivity_analysis.m` | Jithu | Controller-design and sensitivity figures and numbers. |
-| `estimator_step.m`, `estimator_tests/`, `TUNABLE_PARAMETERS.md`, `docs/ESTIMATOR_README_sanjiban.md` | Sanjiban | Estimator and predictor (final), its tests and tuning record, his original README. |
-| `turret_controller.m`, `reference_shaper.m`, `prefilter_design.m`, `fire_logic.m`, `turret_debug.m` | Harsh | Required wrapper, prefilter (design and run time), firing logic, logging side channel. |
-| `target_motion_generator.m`, `target_scenario.m`, `target_truth.m`, `scenario_library.m` | Harsh (+ 15 Nov extensions) | Scenario generator (envelope-checked), truth accessor, designed test/validation scenarios. |
-| `run_scenario.m`, `run_all.m`, `run_random.m`, `run_theta0_sweep.m`, `plot_scenario.m`, `print_metrics.m`, `write_csv.m`, `test_shaper.m` | Harsh | Closed-loop simulation harness (RK4 at 1 ms), metrics, figures. |
-| `compare_designs.m`, `evaluate_tvt.m`, `metrics_report.m` | integration (15 Nov) | Train-G study and threshold selection; test and validation evaluation; the metrics of `TESTING_VALIDATION_METRICS.md`. |
-| `ESTIMATOR_MATH.md`, `TESTING_VALIDATION_METRICS.md` | Sanjiban | Math of the estimator, predictor and firing rule; data sets and metrics. |
-| `results/TVT_README.md`, `results/RERUN_2026-11-15.md` | integration | How to read the results; before/after summary of the D38-D41 re-run. |
-| `tools/` | various | Verification scripts: `check_turret_plant`, `test_call_robustness`, `pair_reset`, `plant_rhs`. |
-| `docs/tvt_parameters.md` | integration | Parameter list (given / set / derived / tuned) and data split; header of `results/TVT_report.md`. |
-| `docs/diagrams/` | integration | Block diagram and drive schematic (script + PNG/PDF). |
-| `figures/`, `figs/`, `results/` | generated | Paper figures and result tables (regenerate with section 4). |
+A guide to every file in `results/`, the before/after numbers of the final revision, and caveats is in [`results/RERUN_2026-11-15.md`](results/RERUN_2026-11-15.md).
 
-## 6. Headline results (frozen design)
+## Data: how train, test and validation sets are generated
 
-* **Scenarios A, B, C:** 9/9 hits each; first hit 1.20 / 1.25 / 1.50 s; tracking RMS 0.26 / 0.75 / 0.71 m. Peak drive demand is 600 V and 35 A during the first slew only.
-* **Initial-angle sweep** (−10°…85°): 15/15 intercepted, 0 missed; worst first hit 2.55 s (slew from 85°).
-* **Margins at the 50 ms update:** GM 11.0 dB, PM 61° (continuous 19.8 dB / 78°); the loop is unchanged.
-* **Train-G** (115 cases, threshold fitted here): 115/115 intercepted, 1049/1049 pulses hit, first hit 0.86 s mean.
-* **Test** (46 unseen cases): 46/46 intercepted, 416/416 pulses hit, first hit 1.04 s mean.
-* **Validation** (16 scenarios × 10 seeds): 160/160 intercepted, 1438/1438 pulses hit, first hit 0.97 s mean / 1.65 s worst.
+All trajectories are checked against the assignment envelope (800-2000 m, ≤ 150 m/s, ≤ 20 m/s², elevation -10° to +85°, blackouts ≤ 0.5 s from t ≥ 1 s), and all radar noise is seeded white Gaussian noise (σ_r = 1 m, σ_θ = 0.02°). Re-running a script regenerates the same data exactly.
 
-## 7. AI use
+| Set | Used for | Generated by | Contents and seeds |
+|---|---|---|---|
+| Train-E | Estimator model and parameters | `estimator_tests/make_test_drones.m`, `run_estimator_sweeps.m` | 12 drone types; seed 1 with 30 runs per type (sweeps), seed 2 with 40 runs per type (confirmation) |
+| Train-G | Firing threshold, prefilter restart after a blackout | `target_scenario.m`, `compare_designs.m` | 115 closed-loop cases: Scenarios A, B, C from turret angles -10°, 10°, 37.5°, 60°, 85°; random cases 4-53; the same with a forced 0.5 s blackout (ids 1004-1053); noise seed 2044 |
+| Test | Checking the tuned values on new drones | `scenario_library('test')`, `evaluate_tvt.m` | 46 cases in three new families (multi-jink, two-frequency weave, sustained turn); trajectory seeds 5001+, noise seed 2044, random start angles |
+| Validation | Final evaluation | `scenario_library('val')`, `evaluate_tvt.m` | 16 designed scenarios in 4 categories (near range/speed limits, full-a_max turns, radar losses, very close/far) × noise seeds 3001-3010 |
 
-AI tools (Claude) were used throughout. See the AI appendix of the paper and
-the notes in the handover package (`06_ai_appendix/`).
+Metric definitions are in [`TESTING_VALIDATION_METRICS.md`](TESTING_VALIDATION_METRICS.md).
+
+## Repository layout
+
+| Path | Contents |
+|---|---|
+| `params.m` | All constants and design values |
+| `target_motion_generator.m`, `target_scenario.m`, `target_truth.m`, `scenario_library.m` | Scenario generator, truth trajectories, designed test and validation scenarios |
+| `turret_controller.m` | Required controller: calls `estimator_step` → `reference_shaper` → `feedback_step`, with `fire_logic` alongside |
+| `estimator_step.m` | Kalman filter (Singer model) and predictor |
+| `reference_shaper.m`, `prefilter_design.m` | Prefilter design (matched to the sampled loop) and run-time filter with clamp |
+| `feedback_step.m`, `turret_plant.m` | Feedback compensator with voltage limit; plant model with hard stops |
+| `fire_logic.m` | Firing gate and one-update pulses |
+| `run_scenario.m`, `run_all.m`, `run_random.m`, `run_theta0_sweep.m`, `plot_scenario.m`, `print_metrics.m`, `write_csv.m`, `turret_debug.m` | Simulation harness (RK4 at 1 ms), metrics, figures, logging |
+| `design_controller.m`, `sensitivity_analysis.m` | Controller design figures and sensitivity numbers |
+| `compare_designs.m`, `evaluate_tvt.m`, `metrics_report.m` | Train-G study and threshold selection; test and validation evaluation; metrics |
+| `test_shaper.m`, `tools/` | Verification scripts |
+| `estimator_tests/` | Estimator data generator, sweeps, checks and result tables |
+| `docs/tvt_parameters.md` | Every parameter, labelled given / set / derived / tuned, with its train data |
+| `docs/diagrams/` | Schematic and block diagram (script and images) |
+| `figures/`, `figs/`, `results/` | Generated figures and result tables |
+| `DESIGN_DECISIONS.md`, `NOTE.md`, `ESTIMATOR_MATH.md`, `TESTING_VALIDATION_METRICS.md`, `TUNABLE_PARAMETERS.md` | Design decisions; notes for evaluation scripts; estimator, predictor and firing math; data sets and metrics; estimator tuning record |
+
+Tags such as D19 or D38 in code comments and documents are labels from the team's decision log; the main decisions are summarised in `DESIGN_DECISIONS.md`.

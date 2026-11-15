@@ -2,7 +2,7 @@
 
 Run:  python3 make_diagrams.py   (matplotlib >= 3.5). Writes PNG (300 dpi),
 PDF and SVG versions of both figures next to this file. All numbers are the
-frozen design values (pipeline doc rev 10, D18, D23, D27, D30, D31).
+frozen design values (D18, D27, D30, D38, D39).
 """
 import matplotlib
 matplotlib.use("Agg")
