@@ -1,7 +1,7 @@
 function D = prefilter_design(n, dt, use_zero)
 %PREFILTER_DESIGN  Discrete prefilter F(z) that cancels the predictor lead.
 %   D = prefilter_design(n, dt)             zero on/off from p.prefilter_zero
-%   D = prefilter_design(n, dt, use_zero)   (owner: Harsh, T2; base MATLAB only)
+%   D = prefilter_design(n, dt, use_zero)   (base MATLAB only)
 %
 %   Rule (D2/D4): the whole chain predictor -> prefilter -> sampled loop must
 %   satisfy  F(e^{sT}) * T(e^{sT}) * P(s) = 1 + O(s^{m+1}),

@@ -21,7 +21,7 @@ T  = feedback(L, 1);                               % reference -> turret
 
 fprintf('Plant: wn = %.2f rad/s, zeta = %.4f, Kvel = %.4e rad/s/V\n', wn, zr, p.Kvel);
 fprintf('Design: Kv_fb = %g 1/s, K_P = %.1f V/rad, zeta_d = %.2f\n', p.Kv_fb, p.K_P, zd);
-fprintf('Prefilter (Harsh): tau_f = t_p - 1/Kv_fb = %.3f s\n\n', p.tau_f);
+fprintf('Prefilter: tau_f = t_p - 1/Kv_fb = %.3f s\n\n', p.tau_f);
 
 %% ---- Margins: P-only vs notch, continuous ----
 fprintf('%-18s %8s %8s %10s %10s\n', 'Design', 'GM [dB]', 'PM [deg]', 'wc [rad/s]', 'max Re(p)');

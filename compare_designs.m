@@ -22,7 +22,7 @@ function S = compare_designs(opts)
 %     the logged estimator/turret signals at the 50 ms grid. A check confirms
 %     that the replay reproduces the simulated pulses exactly.
 %   * Every variant sees the same trajectories and radar noise.
-%   * Gate variants: Sanjiban's rule (valid, |d_hat| < R_eng, P_hit >= threshold),
+%   * Gate variants: the D39 rule (valid, |d_hat| < R_eng, P_hit >= threshold),
 %     threshold swept.
 %   * sigma consistency: the true cross-range error of theta_hat divided by
 %     sigma_cross (should be ~N(0,1): 68 % within 1 sigma, 95 % within 2).

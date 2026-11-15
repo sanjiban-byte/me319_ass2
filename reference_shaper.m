@@ -1,5 +1,5 @@
 function [theta_ref, info] = reference_shaper(est, dt, reset)
-%REFERENCE_SHAPER  Prefilter F(z) and elevation clamp (owner: Harsh, T2).
+%REFERENCE_SHAPER  Prefilter F(z) and elevation clamp.
 %   [theta_ref, info] = reference_shaper(est, dt, reset)
 %   est   estimator struct (theta_pred, theta_hat, theta_dot_hat,
 %         theta_ddot_hat, n); dt time since the previous update [s]

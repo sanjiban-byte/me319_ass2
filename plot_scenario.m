@@ -1,5 +1,5 @@
 function plot_scenario(R, outfile)
-%PLOT_SCENARIO  Standard result figure for one run (owner: Harsh, T2).
+%PLOT_SCENARIO  Standard result figure for one run.
 %   plot_scenario(R) shows it; plot_scenario(R, 'figs/B.png') also saves it.
 %   Panels: (1) target range; (2) elevation: true, estimate, prediction,
 %   shaped reference, turret; (3) turret pointing error at the target

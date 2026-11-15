@@ -1,5 +1,5 @@
 function T = run_theta0_sweep(scen, th0_list, opts)
-%RUN_THETA0_SWEEP  Initial-turret-angle sweep (D21) (owner: Harsh, T2).
+%RUN_THETA0_SWEEP  Initial-turret-angle sweep (D21).
 %   T = run_theta0_sweep({'A','B','C'}, deg2rad([-10 10 37.5 60 85]))
 %   Rows: [scenario index, theta0 deg, success, first hit, n_hits, n_pulses,
 %          worst miss, rms err after 2.5 s, peak current]. Prints a table and

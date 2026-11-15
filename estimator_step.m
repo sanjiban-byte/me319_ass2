@@ -25,7 +25,7 @@ function est = estimator_step(t, r_meas, theta_meas, meas_valid)
 %     theta_dot_hat   elevation rate [rad/s]
 %     theta_ddot_hat  elevation acceleration [rad/s^2]
 %     theta_pred      reference for the turret: theta_hat + t_p*theta_dot_hat (n = 1),
-%                     plus c2*theta_ddot_hat if n = 2. NOT clamped (clamp is Harsh's, D6).
+%                     plus c2*theta_ddot_hat if n = 2. NOT clamped (the clamp is in reference_shaper, D6).
 %     n               predictor order used (1 or 2)
 %     sigma_cross     1-sigma sideways (cross-beam) position uncertainty now [m]
 %     coasting        true while no radar reading has arrived for longer than est_coast_gap
@@ -56,7 +56,7 @@ function est = estimator_step(t, r_meas, theta_meas, meas_valid)
 %     'singer' acceleration that fades with time constant est_tau_a, typical size est_sigma_m
 %   Both use exact continuous-time noise, so any call rate works.
 %
-%   Owner: Sanjiban. ME319 Assignment 2.
+%   ME319 Assignment 2.
 
 persistent S CFG OVR
 

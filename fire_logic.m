@@ -1,5 +1,5 @@
 function [fire_cmd, info] = fire_logic(t, est, theta_turret, theta_dot_turret, reset)
-%FIRE_LOGIC  Engagement gate and one-update 0->1 pulses (owner: Harsh, T2).
+%FIRE_LOGIC  Engagement gate and one-update 0->1 pulses.
 %   Called on the D20 update grid. A pulse (fire_cmd = 1 for one update, so
 %   the evaluator sees a single 0->1 edge) is requested when all hold (D39):
 %     1. the estimator is valid (track settled);

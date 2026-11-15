@@ -1,5 +1,5 @@
 function [V_m, fire_cmd] = turret_controller(t, r_meas, theta_meas, meas_valid, theta_turret, theta_dot_turret)
-%TURRET_CONTROLLER  Predictive-feedback fire-control wrapper (owner: Harsh).
+%TURRET_CONTROLLER  Predictive-feedback fire-control wrapper.
 %   [V_m, fire_cmd] = turret_controller(t, r_meas, theta_meas, meas_valid, ...
 %                                       theta_turret, theta_dot_turret)
 %   t [s]; r_meas [m]; theta_meas [rad]; meas_valid (new radar sample?);

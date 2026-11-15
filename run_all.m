@@ -1,4 +1,4 @@
-% RUN_ALL  Reproduce all T2 results (owner: Harsh, T2). Run from the repo root.
+% RUN_ALL  Scenarios A-C, initial-angle sweep and random cases. Run from the repo root.
 %   1. Scenarios A, B, C at theta0 = 37.5 deg: metrics, figures (figs/), summary.
 %   2. Initial-angle sweep (D21) over p.theta0_sweep for A, B, C.
 %   3. 25 seeded random bounded-maneuver cases (ids 4-28).

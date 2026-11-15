@@ -10,7 +10,7 @@ function R = test_estimator(varargin)
 %                  'quiet' (true = no printing)
 %
 %   What is measured, at every controller call from the moment est.valid turns true:
-%     ideal turret  the turret if Harsh's path were exactly 1/(1 + t_p s) (matched, no
+%     ideal turret  the turret if the turret path were exactly 1/(1 + t_p s) (matched, no
 %                   voltage limit). Miss = sideways distance from the beam to the drone NOW.
 %                   "% on target" = share of time the miss is <= R_eng (2 m), i.e. the
 %                   chance that a shot fired at a random moment would hit.

@@ -7,7 +7,7 @@ function p = params(cmd, ovr)
 %   existing fields with those of struct s until params('override') clears it.
 %   Unknown field names are an error. Never used by turret_controller itself.
 %
-%   Owner: Jithu (T1). Harsh/Sanjiban may append their own fields in the
+%   Each part of the design has its own marked section below; add new fields in the
 %   marked sections.
 
 persistent P OVR
@@ -76,7 +76,7 @@ p.C = [1 0 0];
 p.V_max = 600;              % assumed drive voltage limit [V] (not given in spec)
 p.tau_stop = 0.005;         % hard-stop velocity decay time constant [s] (plant model only)
 
-%% ---------------- Feedback loop design (T1, Jithu; decision D18) ----------------
+%% ---------------- Feedback loop design (decision D18) ----------------
 % Gc(s) = K_P * N(s), with N(s) a notch that cancels the plant's lightly damped
 % electromechanical pole pair and replaces it with a well-damped pair at the
 % same natural frequency:
@@ -93,23 +93,21 @@ p.K_P      = p.Kv_fb / p.Kvel;      % ~8012 V/rad
 p.Gc_num = p.K_P * [1, 2*p.zeta_res*p.wn_res, p.wn_res^2];   % continuous, descending powers of s
 p.Gc_den =         [1, 2*p.zeta_d  *p.wn_res, p.wn_res^2];
 
-%% ---------------- Reference shaping (T2, Harsh) ----------------
+%% ---------------- Reference shaping and firing ----------------
 % Overall reference->turret lag must equal t_p (decisions D2, D4).
 p.Kv_total = 1 / p.t_p;             % = 2 1/s
 p.tau_f    = p.t_p - 1/p.Kv_fb;     % first-order prefilter time constant [s] (all-pole form only)
 p.prefilter_zero = true;    % D38: lead-lag prefilter with one zero (n = 1), matched so
                             % F*T*P = 1 up to s^2; removes the D33 residual.
                             % false = the original all-pole D23 filter.
-% Harsh: add prefilter / fire-logic parameters below this line.
-% ---- T2 block (Harsh) ----
-p.n_pred  = 1;              % predictor order n (Sanjiban's final decision: n = 1,
+p.n_pred  = 1;              % predictor order n (final decision: n = 1,
                             % theta_pred = theta_hat + t_p*theta_dot_hat). D2, D9.
                             % The shaper follows est.n from estimator_step anyway.
 p.dt_ctrl = 0.05;           % internal update grid of turret_controller (D20) [s]
 p.t_reset_jump = 0.5;       % backward time jump that counts as a new run (D19) [s]
 p.reinit_on_reacq = true;   % FROZEN (D27): re-initialise the prefilter when measurements return after a blackout
 p.t_warm  = 0.30;           % prefilter IC re-applied while the estimate settles [s]
-% Firing gate (D39, Sanjiban's rule): valid AND |d_hat| < R_eng AND P_hit >= fire_phit_min
+% Firing gate (D39): valid AND |d_hat| < R_eng AND P_hit >= fire_phit_min
 % AND recharge elapsed. See fire_logic.m. (The D28 rate and range checks are dropped.)
 p.fire_phit_min = 0.95;     % P_hit threshold, refitted on Train-G (compare_designs, 115 cases; D39)
 p.fire_recharge_margin = 0.01; % [s] edge spacing kept >= 1.01 s (float-safe; 1.05 s on the grid)
@@ -118,7 +116,7 @@ p.dt_sim     = 1e-3;        % plant integration step in the harness [s]
 p.noise_seed = 2044;        % measurement-noise seed
 p.theta0_sweep = deg2rad([-10 10 37.5 60 85]);   % D21
 
-%% ---------------- Estimator and predictor (Sanjiban, D30) ----------------
+%% ---------------- Estimator and predictor (D30) ----------------
 % estimator_step.m reads these (same names). Chosen on Train-E by the worst-case
 % rule; see TUNABLE_PARAMETERS.md. CA was compared and not kept (comparison only).
 p.est_model       = 'singer';  % Singer acceleration model (tuned)

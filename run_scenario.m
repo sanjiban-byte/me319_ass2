@@ -1,8 +1,8 @@
 function R = run_scenario(scenario, opts)
-%RUN_SCENARIO  Closed-loop simulation of one engagement (owner: Harsh, T2).
+%RUN_SCENARIO  Closed-loop simulation of one engagement.
 %   R = run_scenario(scenario, opts)
 %   opts (all optional): dt_call, dt_sim, th0 [rad], verbose.
-%   The plant (turret_plant.m, Jithu) is integrated with fixed-step RK4 at
+%   The plant (turret_plant.m) is integrated with fixed-step RK4 at
 %   dt_sim (1 ms: below the 5 ms hard-stop time constant and resolving the
 %   56 rad/s mode). The controller is called every dt_call (default 0.05 s);
 %   it updates internally on its own 0.05 s grid (D20), so results should not

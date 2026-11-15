@@ -1,4 +1,4 @@
-% TEST_SHAPER  Unit test of the prefilter design (owner: Harsh, T2; D38 additions).
+% TEST_SHAPER  Unit test of the prefilter design (including the D38 lead-lag form).
 %   (i)  n = 1 all-pole reproduces D23 exactly (alpha = tau_f/(tau_f + dt));
 %        n = 1 lead-lag (D38): coefficients and equivalent pole / zero;
 %   (ii) the chain F(e^{sT}) T(e^{sT}) P(s) equals 1 up to the matched order

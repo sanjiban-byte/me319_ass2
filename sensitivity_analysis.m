@@ -41,7 +41,7 @@ fprintf('    Spec for estimator: white sigma(theta_pred) <= %.2f mrad keeps jitt
     1e3*budget/2000/g_th, budget);
 fprintf('    (slowly varying errors are not attenuated; see A2)\n\n');
 
-%% ---- A1b: closed-loop tracking-error budget (Sanjiban's estimator, D30) ----
+%% ---- A1b: closed-loop tracking-error budget (estimator_step, D30) ----
 % Scenarios A, B, C at the 37.5 deg baseline, t >= 2.5 s (turret locked).
 % Linear model: turret ~= FT*theta_pred with theta_pred = (theta + t_p*thetadot) + e_pred:
 %   turret - theta = FT*e_pred                              (estimator part)
