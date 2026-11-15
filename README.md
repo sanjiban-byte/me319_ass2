@@ -7,7 +7,7 @@ and prediction, paper). The problem statement is
 `Assignment_2_ME_319_Control_Systems_S3.pdf`.
 
 > ### Note for Claude (or any AI assistant used by a team member)
-> - **Do not make crucial design decisions on your own.** Model choices, tuning values, interfaces between team members, and anything another member depends on are the user's (and the team's) call.
+> - **Do not make important design decisions on your own.** Model choices, tuning values, interfaces between team members, and anything another member depends on are the user's (and the team's) call.
 > - **Always ask before choosing a design.** Lay out the options, with their trade-offs and test evidence, in simple words, and let the user decide.
 > - **Explain everything nicely.** Assume the user wants to understand why, not just get code.
 > - **Don't silently change decisions already recorded** in this README, `params.m`, `TUNABLE_PARAMETERS.md`, `ESTIMATOR_MATH.md`, `TESTING_VALIDATION_METRICS.md` or the team's pipeline document. If something looks wrong, flag it to the user instead of fixing it yourself.
@@ -94,7 +94,7 @@ way (MATLAB R2025a, 15 Nov 2026).
 | `run_scenario.m`, `run_all.m`, `run_random.m`, `run_theta0_sweep.m`, `plot_scenario.m`, `print_metrics.m`, `write_csv.m`, `test_shaper.m` | Harsh | Closed-loop simulation harness (RK4 at 1 ms), metrics, figures. |
 | `compare_designs.m`, `evaluate_tvt.m`, `metrics_report.m` | integration (15 Nov) | Train-G study and threshold selection; test and validation evaluation; the metrics of `TESTING_VALIDATION_METRICS.md`. |
 | `ESTIMATOR_MATH.md`, `TESTING_VALIDATION_METRICS.md` | Sanjiban | Math of the estimator, predictor and firing rule; data sets and metrics. |
-| `results/TVT_README.md`, `results/RERUN_2026-11-15.md` | integration | How to read the results; before/after summary of the D38–D41 re-run. |
+| `results/TVT_README.md`, `results/RERUN_2026-11-15.md` | integration | How to read the results; before/after summary of the D38-D41 re-run. |
 | `tools/` | various | Verification scripts: `check_turret_plant`, `test_call_robustness`, `pair_reset`, `plant_rhs`. |
 | `docs/tvt_parameters.md` | integration | Parameter list (given / set / derived / tuned) and data split; header of `results/TVT_report.md`. |
 | `docs/diagrams/` | integration | Block diagram and drive schematic (script + PNG/PDF). |

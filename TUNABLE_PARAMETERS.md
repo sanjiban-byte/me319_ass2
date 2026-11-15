@@ -8,16 +8,16 @@ Fixed problem constants (radar noise, t_p = 0.5 s, limits) are **not** listed he
 
 Status key: **Open** = not decided yet · **Candidate** = a value is being tested · **Frozen** = final, copied into `params.m`
 
-Decision references (D…, Q…) point to the team pipeline document (`PIPELINE_full.md`, decision log D1–D41).
+Decision references (D…, Q…) point to the team pipeline document (`PIPELINE_full.md`, decision log D1-D41).
 
-## Estimator (denoiser) — Sanjiban
+## Estimator (denoiser), Sanjiban
 
 | Parameter | Proposed name in `params.m` | Meaning | Starting value or range | Status |
 |---|---|---|---|---|
 | Model | `est_model` | `'CA'` (pure constant acceleration) or `'singer'` (acceleration that fades) | **`'singer'`** (chosen over CA by the MATLAB sweep; see results below). CA is not a fallback; its code path exists only to reproduce the comparison. | Frozen (D30) |
-| CA process noise | `est_q_ca` | Strength of the unknown jerk (CA only), as a continuous-time intensity, so it works at any call rate | 250 (best CA in the sweep; tested 100–20000 m²/s⁵). Used only in the comparison runs. | Comparison only |
-| Singer acceleration size | `est_sigma_m` | Typical size of the drone's acceleration, per axis (Singer only) | **10 m/s²** (tested 5–20) | Frozen (D30) |
-| Singer fade time | `est_tau_a` | How long an acceleration typically lasts before fading (Singer only) | **1 s** (tested 0.25–2) | Frozen (D30) |
+| CA process noise | `est_q_ca` | Strength of the unknown jerk (CA only), as a continuous-time intensity, so it works at any call rate | 250 (best CA in the sweep; tested 100-20000 m²/s⁵). Used only in the comparison runs. | Comparison only |
+| Singer acceleration size | `est_sigma_m` | Typical size of the drone's acceleration, per axis (Singer only) | **10 m/s²** (tested 5-20) | Frozen (D30) |
+| Singer fade time | `est_tau_a` | How long an acceleration typically lasts before fading (Singer only) | **1 s** (tested 0.25-2) | Frozen (D30) |
 | Start-up speed uncertainty | `est_sigma_v0` | How unsure we are of speed at the first reading | 150 m/s (max speed) | Frozen (D30) |
 | Start-up acceleration uncertainty | `est_sigma_a0` | How unsure we are of acceleration at the first reading | 20 m/s² (max accel) | Frozen (D30) |
 | Readings before ready | `est_min_updates` | `est.valid` cannot turn true before this many radar readings have been used | 5 (valid at t = 0.20 s when the first reading is at t = 0) | Frozen (D30) |
@@ -44,7 +44,7 @@ Full tables: `estimator_tests/results/sweep1_seed1.md`, `sweep2_extended_seed1.m
 | Setting | Seed 1: mean / worst type / worst run | Seed 2 (fresh): mean / worst type / worst run | Blackout + recovery, worst type (seed 1 / seed 2) |
 |---|---|---|---|
 | CA q = 250 (best CA) | 99.5 / 97.0 / 90 | 99.6 / 98.0 / 92 | 85 / 87 |
-| CA q = 4500 (old default) | 98.5 / 91.2 / 80 | — | 60 / — |
+| CA q = 4500 (old default) | 98.5 / 91.2 / 80 | - | 60 / - |
 | Singer τ = 0.5, σ_m = 10 | 99.7 / 98.3 / 91 | 99.7 / 97.9 / 90 | 88 / 90 |
 | Singer τ = 1, σ_m = 10 | 99.6 / 98.1 / 89 | 99.7 / 98.2 / 91 | 89 / 90 |
 
@@ -53,7 +53,7 @@ Full tables: `estimator_tests/results/sweep1_seed1.md`, `sweep2_extended_seed1.m
 - Seed 1 favours Singer clearly; on seed 2 the two are almost tied (CA has the better worst run, Singer the better worst type).
 - **Open point:** the test script reads "not much worse" as "within 2 standard errors". Because every setting sees the same drones and noise, that error is tiny (0.06 points), so even a 0.1-point gap counts as "worse". A practical tolerance (for example 0.5 points) would be fairer; the team should pick one.
 
-## Predictor — Sanjiban, paired with Harsh
+## Predictor, Sanjiban, paired with Harsh
 
 | Parameter | Proposed name in `params.m` | Meaning | Starting value or range | Status |
 |---|---|---|---|---|
@@ -74,7 +74,7 @@ The estimator still tracks acceleration inside its (x, y) state. That keeps θ̂
 | **Turret on target with the matched chain, velocity-only lead** | **99 % / 94 %** | **100 % / 98 %** |
 | Same, acceleration term in the lead (and matched) | 98 % / 92 % | 95 % / 86 % |
 
-- Even the best pure forecast is within 2 m only about 60–70 % of the time: unknown future maneuvers plus noisy speed, multiplied by 0.5 s. A turret that aims at a real forecast is limited by that.
+- Even the best pure forecast is within 2 m only about 60-70 % of the time: unknown future maneuvers plus noisy speed, multiplied by 0.5 s. A turret that aims at a real forecast is limited by that.
 - The acceleration term makes things worse or no better, on both measures, because estimated acceleration is noisy. Under the worst-case rule it loses clearly.
 - Higher-order lead also forces Harsh to copy our coefficient exactly. With n = 1 he only needs t_p = 0.5.
 

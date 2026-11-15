@@ -9,7 +9,7 @@ The math of the estimator, predictor and firing rule is in `ESTIMATOR_MATH.md`. 
 - The instructor's evaluation cases are never used for tuning, and no scenario gets its own retuning.
 - The PDF's standard Scenarios A, B and C are always reported separately, as the PDF requires.
 - All our data is synthetic, made by the team's target generator, and every path is checked numerically against the PDF limits:
-  - range 800–2000 m
+  - range 800-2000 m
   - speed ≤ 150 m/s
   - acceleration ≤ 20 m/s²
   - elevation −10° to +85°
@@ -24,8 +24,8 @@ One **run** is one 10 s engagement: one drone path plus its own radar noise. Vol
 | Set | Used for | Volume | Drone scenarios | May the design change after seeing it? |
 |---|---|---|---|---|
 | **Train** | Fitting every tuned value: estimator settings, the firing threshold p*, and any other swept parameter | N_train (whatever the team's training sweeps used) | The training scenario types | Yes. This is where all tuning happens. |
-| **Test** | Checking that the tuned values (thresholds, parameters) still hold on new drones | **N_test ≈ 2/5 × N_train** | The same kinds as train, **plus 2–3 extra types** that are similar or a bit different | No retuning on it. If a value clearly fails here, retune **on train** with the reason written down, then re-check. |
-| **Validation** | Final judgment of the frozen design, on new kinds of scenarios | Fixed before generating (see Section 2) | The four validation scenarios V1–V4 (Section 2) | No. Results are reported as they come out. |
+| **Test** | Checking that the tuned values (thresholds, parameters) still hold on new drones | **N_test ≈ 2/5 × N_train** | The same kinds as train, **plus 2-3 extra types** that are similar or a bit different | No retuning on it. If a value clearly fails here, retune **on train** with the reason written down, then re-check. |
+| **Validation** | Final judgment of the frozen design, on new kinds of scenarios | Fixed before generating (see Section 2) | The four validation scenarios V1-V4 (Section 2) | No. Results are reported as they come out. |
 
 ### Volume rule for the test set
 
@@ -33,10 +33,10 @@ $$
 N_{\text{test}} = \operatorname{round}\!\left(\tfrac{2}{5}\,N_{\text{train}}\right)
 $$
 
-- Spread N_test across the train types in about the same proportions as in train, and give the 2–3 extra types a share of their own.
-- **Example only:** the first estimator sweep used 12 types × 30 runs = 360 training runs per setting. That gives N_test ≈ 144, for example about 10 runs per type over 12 + 2–3 types.
+- Spread N_test across the train types in about the same proportions as in train, and give the 2-3 extra types a share of their own.
+- **Example only:** the first estimator sweep used 12 types × 30 runs = 360 training runs per setting. That gives N_test ≈ 144, for example about 10 runs per type over 12 + 2-3 types.
 
-### The 2–3 extra test types
+### The 2-3 extra test types
 
 These are proposals; the team picks the final ones. They should be **similar to train but a bit different**, and should not overlap the validation scenarios.
 - **Different maneuver shape:** constant-acceleration segments joined by smooth 0.2 s transitions (random turns that hold, then switch), instead of the sine-shaped weaves used in training.
@@ -57,10 +57,10 @@ These are the four new kinds of scenarios used for final validation. Every path 
 
 | ID | Scenario | What to generate | Why it is hard |
 |---|---|---|---|
-| **V1** | **Drone near the limits of distance and velocity** | Paths that spend long stretches within about 50 m of 800 m or of 2000 m while flying at 140–150 m/s. Include both corners: fast and close, and fast and far. Maneuvers are allowed up to a_max (turning keeps the speed under the limit). | The fastest angle rates (close) and the largest sideways noise (far) occur at top speed. |
-| **V2** | **Sudden turns at full a_max, including right when the radar goes blind** | Turns at 20 m/s² with a sharp but smooth onset (0.2 s ramp), lasting 0.5–2 s, in both directions, including quick reversals (S-turns). Sub-cases: (a) the turn starts with the radar on; (b) **the turn starts exactly when a blackout starts**; (c) the turn starts in the middle of a blackout; (d) the turn starts just as the radar returns. | The estimator learns about the turn late, or only after the blackout. |
-| **V3** | **Radar loss at different times, and more than one loss per run** | Single 0.5 s losses with start times stepped across the run (1.0, 1.5, …, 9.5 s). Runs with 2 and with 3 losses, including losses separated by only a short stretch of radar (for example 0.2–0.5 s). | Coasting error and recovery at every phase of a maneuver; repeated losses before the track has recovered. |
-| **V4** | **Drone very close to and very far from the turret** | Close: 800–850 m, especially crossing paths (angle rate up to 150/800 ≈ 0.19 rad/s). Far: 1950–2000 m, mostly with maneuvers. | Close: the turret must follow the fastest angle changes. Far: the 2 m circle is only ±0.057° wide, and the sideways radar noise is largest (r·σ_θ ≈ 0.70 m). |
+| **V1** | **Drone near the limits of distance and velocity** | Paths that spend long stretches within about 50 m of 800 m or of 2000 m while flying at 140-150 m/s. Include both corners: fast and close, and fast and far. Maneuvers are allowed up to a_max (turning keeps the speed under the limit). | The fastest angle rates (close) and the largest sideways noise (far) occur at top speed. |
+| **V2** | **Sudden turns at full a_max, including right when the radar goes blind** | Turns at 20 m/s² with a sharp but smooth onset (0.2 s ramp), lasting 0.5-2 s, in both directions, including quick reversals (S-turns). Sub-cases: (a) the turn starts with the radar on; (b) **the turn starts exactly when a blackout starts**; (c) the turn starts in the middle of a blackout; (d) the turn starts just as the radar returns. | The estimator learns about the turn late, or only after the blackout. |
+| **V3** | **Radar loss at different times, and more than one loss per run** | Single 0.5 s losses with start times stepped across the run (1.0, 1.5, …, 9.5 s). Runs with 2 and with 3 losses, including losses separated by only a short stretch of radar (for example 0.2-0.5 s). | Coasting error and recovery at every phase of a maneuver; repeated losses before the track has recovered. |
+| **V4** | **Drone very close to and very far from the turret** | Close: 800-850 m, especially crossing paths (angle rate up to 150/800 ≈ 0.19 rad/s). Far: 1950-2000 m, mostly with maneuvers. | Close: the turret must follow the fastest angle changes. Far: the 2 m circle is only ±0.057° wide, and the sideways radar noise is largest (r·σ_θ ≈ 0.70 m). |
 
 **Notes:**
 - The PDF promises at most one blackout, of at most 0.5 s. The multi-loss runs in V3 go **beyond the PDF** as a stress test, so report them separately from the single-loss runs.
@@ -240,7 +240,7 @@ Report it for normal tracking and for blackout windows separately. If c₁ and c
   4. then the total number of hits.
 
   Result on Train-G: **p* = 0.95** (0.95 to 0.995 all gave zero misses; 0.95 had the earliest first hits). See `results/compare_designs.md`.
-- **Checked on test.** Report M1–M4 at the fitted p*, and at p* ± 0.05 to show how sensitive the results are.
+- **Checked on test.** Report M1-M4 at the fitted p*, and at p* ± 0.05 to show how sensitive the results are.
 - **p* must be fitted with the real turret path in the loop** (Harsh's and Jithu's parts). With an ideal turret, d̂ stays near 0 and p* would barely matter.
 
 ---

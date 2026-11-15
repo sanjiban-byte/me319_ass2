@@ -117,7 +117,7 @@ $$
 
 Both are exact continuous-time models, so stepping twice by T/2 equals stepping once by T. That is why any controller call rate works.
 
-## A3–A4. First reading: start the track
+## A3-A4. First reading: start the track
 
 On the very first new reading (with z and R from A5):
 
@@ -291,7 +291,7 @@ $$
 \varepsilon \sim \mathcal{N}(0,\ \sigma_\perp^2)
 $$
 
-**Checked in simulation** across 12 drone types: the real errors fell within ±σ⊥ 69–72% of the time and within ±2σ⊥ 96–97% (Gaussian: 68% and 95%). During blackouts the figures were 65–77% and 94–98%, while σ⊥ grew to about 2.2 m. So σ⊥ is honest.
+**Checked in simulation** across 12 drone types: the real errors fell within ±σ⊥ 69-72% of the time and within ±2σ⊥ 96-97% (Gaussian: 68% and 95%). During blackouts the figures were 65-77% and 94-98%, while σ⊥ grew to about 2.2 m. So σ⊥ is honest.
 
 ### Step 4. Write "hit" in terms of ε
 
@@ -340,7 +340,7 @@ If |d̂| ≥ R_eng, one edge of the circle is on or behind the estimate, so P_hi
 |---|---|
 | θ_turret is exact | It is an input to `turret_controller` |
 | The laser is instant | Stated in the PDF |
-| r̂ ≈ r | Range error ≈ 1 m out of 800–2000 m (Step 2) |
+| r̂ ≈ r | Range error ≈ 1 m out of 800-2000 m (Step 2) |
 | sin x ≈ x | Angle gaps that matter are below 0.003 rad |
 | ε is Gaussian, mean 0, spread σ⊥ | Gaussian radar noise and a linear filter; spread checked in simulation (Step 3); mean checked by the bias test in `TESTING_VALIDATION_METRICS.md` |
 
@@ -355,47 +355,47 @@ If |d̂| ≥ R_eng, one edge of the circle is on or behind the estimate, so P_hi
 | t | `t` | Current time of this controller call | s | In (from the evaluation script via `turret_controller`) |
 | r_m | `r_meas` | Measured range | m | In (radar) |
 | θ_m | `theta_meas` | Measured elevation | rad | In (radar) |
-| meas_valid | `meas_valid` | 1 = this call carries a new radar reading | – | In (radar) |
-| r, θ | – | True range and elevation (unknown to us) | m, rad | Only in tests |
-| n₁, n₂ | – | Standard normal noise draws | – | Only in tests |
+| meas_valid | `meas_valid` | 1 = this call carries a new radar reading | - | In (radar) |
+| r, θ | - | True range and elevation (unknown to us) | m, rad | Only in tests |
+| n₁, n₂ | - | Standard normal noise draws | - | Only in tests |
 | x̂ | `S.x`, out as `est.state` | State estimate [x, v_x, a_x, y, v_y, a_y] | m, m/s, m/s² | Int (also Out for plots) |
 | P | `S.P` | Covariance of the state estimate (how unsure we are) | mixed | Int |
 | T | `dt` | Time since the last call | s | Int |
-| F, F₃ | `F`, `F3` | State transition over time T | – | Int |
+| F, F₃ | `F`, `F3` | State transition over time T | - | Int |
 | Q, Q₃ | `Q`, `Q3` | Uncertainty added by unknown maneuvers over time T | mixed | Int |
-| A, G, M, E | – | Continuous Singer model and Van Loan matrices | – | Int |
+| A, G, M, E | - | Continuous Singer model and Van Loan matrices | - | Int |
 | q_c | `qc` | Singer noise intensity, 2σ_m²/τ | m²/s⁵ | Int |
 | z | `z` | Reading converted to (x, y) | m | Int |
 | R | `R` | Covariance of z | m² | Int |
-| U | `Rot` | Rotation from (along beam, sideways) to (x, y) | – | Int |
-| H | `H` | Picks x and y out of the state | – | Int |
+| U | `Rot` | Rotation from (along beam, sideways) to (x, y) | - | Int |
+| H | `H` | Picks x and y out of the state | - | Int |
 | ν | `innov` | Innovation: reading minus predicted position | m | Int |
 | S | `Sm` | Expected spread of ν | m² | Int |
-| K | `K` | Kalman gain: how much to trust the reading | – | Int |
+| K | `K` | Kalman gain: how much to trust the reading | - | Int |
 | r̂ | `est.r_hat` | Estimated range now | m | Out → fire rule |
 | θ̂ | `est.theta_hat` | Estimated elevation now | rad | Out → fire rule, prefilter start |
 | ṙ̂ | `rd` | Range rate | m/s | Int |
 | θ̂̇ | `est.theta_dot_hat` | Elevation rate | rad/s | Out → Harsh (prefilter start) |
 | θ̂̈ | `est.theta_ddot_hat` | Elevation acceleration | rad/s² | Out (n = 2 fallback, plots) |
-| u⊥ | `u` | Unit vector across the beam | – | Int |
+| u⊥ | `u` | Unit vector across the beam | - | Int |
 | σ⊥ | `est.sigma_cross` | 1-σ sideways position uncertainty now | m | Out → fire rule |
 | θ_pred | `est.theta_pred` | Predicted elevation reference, unclamped | rad | Out → Harsh (prefilter input) |
-| n | `est.n` | Predictor order used (1) | – | Out → Harsh (prefilter must match) |
+| n | `est.n` | Predictor order used (1) | - | Out → Harsh (prefilter must match) |
 | x̂(t + t_p) | `est.pos_pred` | Cartesian forecast 0.5 s ahead | m | Out (plots only) |
-| N_upd | `est.n_updates` | Readings used so far | – | Out |
+| N_upd | `est.n_updates` | Readings used so far | - | Out |
 | t − t_last | `est.t_since_meas` | Time since the last reading used | s | Out |
-| valid | `est.valid` | Track has settled; safe to start the prefilter and fire | – | Out → Harsh |
-| coasting | `est.coasting` | No reading for longer than Δ_coast (blackout) | – | Out → logging |
-| H(s) | – | Required response from θ_pred to the turret angle | – | Harsh and Jithu's side |
-| d | – | True sideways miss of the beam (unknown to us) | m | Hit condition |
+| valid | `est.valid` | Track has settled; safe to start the prefilter and fire | - | Out → Harsh |
+| coasting | `est.coasting` | No reading for longer than Δ_coast (blackout) | - | Out → logging |
+| H(s) | - | Required response from θ_pred to the turret angle | - | Harsh and Jithu's side |
+| d | - | True sideways miss of the beam (unknown to us) | m | Hit condition |
 | θ_turret | `theta_turret` | Turret elevation, known exactly | rad | In to `turret_controller`; used by the fire rule |
-| d̂ | – | Our estimated sideways miss, r̂·sin(θ_turret − θ̂) | m | Fire rule |
-| ε | – | Sideways error of our estimate, d − d̂ | m | Fire rule (statistics) |
-| Φ | – | Standard normal cumulative distribution | – | Fire rule |
-| P_hit | – | Probability the pulse hits, given d̂ and σ⊥ | – | Fire rule |
-| p* | – | Firing threshold on P_hit (fitted on train, checked on test) | – | Fire rule |
+| d̂ | - | Our estimated sideways miss, r̂·sin(θ_turret − θ̂) | m | Fire rule |
+| ε | - | Sideways error of our estimate, d − d̂ | m | Fire rule (statistics) |
+| Φ | - | Standard normal cumulative distribution | - | Fire rule |
+| P_hit | - | Probability the pulse hits, given d̂ and σ⊥ | - | Fire rule |
+| p* | - | Firing threshold on P_hit (fitted on train, checked on test) | - | Fire rule |
 | R_eng | `p.R_eng` | Engagement radius, 2 m (PDF) | m | Hit condition, fire rule |
-| fire | `fire_cmd` | 1 = request a pulse (fires on a 0→1 change after the 1 s recharge) | – | Out of `turret_controller` |
+| fire | `fire_cmd` | 1 = request a pulse (fires on a 0→1 change after the 1 s recharge) | - | Out of `turret_controller` |
 
 ---
 
