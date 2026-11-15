@@ -58,6 +58,8 @@ $$
 
 A real noisy reading never repeats exactly, so an exact repeat means the caller is re-sending an old reading. It is ignored.
 
+**Time going backwards.** If a call comes with a time slightly earlier than the previous call, the state is not moved backwards; a reading in that call is used at the current state time. An ODE solver does this on a rejected step. Only a jump back of more than 0.5 s means a new run and starts a new track. This is the same rule as `turret_controller` (decision D19).
+
 ## A2. Time update (predict the state forward to time t)
 
 **State** (per axis: position, velocity, acceleration):
@@ -219,6 +221,21 @@ $$
 
 **The turret ends up pointing at our current estimate θ̂(t).** The 0.5 s lead and the 0.5 s lag cancel, so the error of forecasting 0.5 s ahead never reaches the turret.
 
+**How exact is the cancellation in the real chain?** The path is a prefilter F(z) followed by the sampled feedback loop T(z) (gain K_v = 8, notch, 50 ms updates). Writing the chain as a Taylor series in s:
+
+$$
+F\,T\,P = 1 + k_1 s + k_2 s^2 + k_3 s^3 + \dots, \qquad \theta_{\text{turret}} \approx \hat\theta + k_1\,\hat{\dot\theta} + k_2\,\hat{\ddot\theta} + \dots
+$$
+
+- **The original first-order prefilter** F = 1/(1 + τ_f s), with τ_f = t_p − 1/K_v = 0.375 s, makes k₁ = 0 but leaves k₂ ≈ −0.046 s². That is a pointing error of about 0.046·r·θ̈ (decision D33): 0.43 m RMS in Scenario B, and about 2.2 m at the corner of the flight envelope (800 m, 150 m/s crossing, 20 m/s²).
+- **The prefilter now has one zero** (decision D38): y_k = α·y_{k−1} + β·u_k + β₁·u_{k−1}. Its three coefficients are chosen so that k₀, k₁ and k₂ all match, which makes k₂ = 0. For an ideal loop this is
+$$
+F(s) = \frac{1 + s/K_v}{1 + t_p s}.
+$$
+  On the real sampled loop at 50 ms the design gives a pole time constant of 0.521 s and a zero time constant of 0.145 s. What is left is k₃ ≈ −0.0044 s³, ten times smaller. `test_shaper.m` checks this: with a constant-acceleration θ̂, the steady turret error falls from −0.046·θ̈ to −5×10⁻¹⁰ rad.
+
+So with the zero, the turret points at θ̂(t) up to a third-order term. The predictor stays first order (n = 1); only the turret side changed.
+
 A hit happens when the sideways miss is within the engagement radius:
 
 $$
@@ -233,7 +250,9 @@ $$
 \text{fire} = \text{valid}\ \wedge\ \big(|\hat d| < R_{\text{eng}}\big)\ \wedge\ \big(P_{\text{hit}} \ge p^*\big)
 $$
 
-p* is the one threshold. It is fitted on the training set and checked on the test set (see `TESTING_VALIDATION_METRICS.md`). How a request becomes a pulse is the PDF's rule: a pulse fires on a 0→1 change of `fire_cmd`, and only if at least t_recharge = 1 s has passed since the last pulse.
+p* is the one threshold. It is fitted on the training set and checked on the test set (see `TESTING_VALIDATION_METRICS.md`); the fitted value is **p* = 0.95**. How a request becomes a pulse is the PDF's rule: a pulse fires on a 0→1 change of `fire_cmd`, and only if at least t_recharge = 1 s has passed since the last pulse (the code keeps 1.01 s, so floating-point time stamps can never make it 0.9999 s).
+
+This is the whole rule in `fire_logic.m` (decision D39). The earlier extra conditions are dropped: the turret-rate match |θ̇_turret − θ̂̇| ≤ 0.02 rad/s, and the elevation-range check, which is implied anyway because the turret cannot point outside its stops.
 
 ### Step 1. Our estimated miss
 

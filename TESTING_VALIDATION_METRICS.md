@@ -233,10 +233,13 @@ Report it for normal tracking and for blackout windows separately. If c₁ and c
 
 ## 5. Fitting and checking the firing threshold p*
 
-- **Fitted on train only.** The objective must follow the worst-case rule: the worst scenario type matters most. One proposal, **still to be agreed**: maximise, in order,
+- **Fitted on train only.** The objective follows the worst-case rule: the worst scenario type matters most. Used for the 15 Nov re-run (decision D39), maximising in order:
   1. the worst scenario's success rate (M1),
   2. then the worst scenario's per-shot hit rate (M3),
-  3. then the mean interception time (M2, lower is better).
+  3. then the mean interception time (M2, lower is better);
+  4. then the total number of hits.
+
+  Result on Train-G: **p* = 0.95** (0.95 to 0.995 all gave zero misses; 0.95 had the earliest first hits). See `results/compare_designs.md`.
 - **Checked on test.** Report M1–M4 at the fitted p*, and at p* ± 0.05 to show how sensitive the results are.
 - **p* must be fitted with the real turret path in the loop** (Harsh's and Jithu's parts). With an ideal turret, d̂ stays near 0 and p* would barely matter.
 

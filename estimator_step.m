@@ -4,7 +4,9 @@ function est = estimator_step(t, r_meas, theta_meas, meas_valid)
 %   est = estimator_step(t, r_meas, theta_meas, meas_valid)
 %
 %   Call once per controller call. Keeps its own state between calls (persistent)
-%   and resets automatically when t decreases (a new run, decision D12).
+%   and resets automatically when t jumps back by more than 0.5 s (a new run,
+%   decision D19). Smaller backward steps, as an ODE solver makes on rejected
+%   steps, keep the track: the state is just not moved backwards.
 %
 %   Inputs
 %     t           current time [s]
@@ -48,7 +50,9 @@ function est = estimator_step(t, r_meas, theta_meas, meas_valid)
 %   Method: Kalman filter in (x, y). Each radar reading (r, theta) is converted to (x, y);
 %   its noise is mostly sideways at long range, so the measurement noise is the rotated
 %   diag(sigma_r^2, (r*sigma_theta)^2). Motion model per axis [p v a]:
-%     'CA'     constant acceleration with random jerk (intensity est_q_ca)
+%     'CA'     constant acceleration with random jerk (intensity est_q_ca). NOT part of the
+%              final design: kept only so estimator_tests/run_estimator_sweeps.m can
+%              reproduce the CA-vs-Singer comparison that led to choosing Singer.
 %     'singer' acceleration that fades with time constant est_tau_a, typical size est_sigma_m
 %   Both use exact continuous-time noise, so any call rate works.
 %
@@ -81,11 +85,14 @@ end
 
 if isempty(CFG), CFG = build_config(OVR); end
 
-% ---------------- new run? (D12: reset when t decreases) ----------------
-if isempty(S) || t < S.t_call
+% ---------------- new run? (D19: reset only on a big jump back in time) ----------------
+% An ODE solver may call slightly earlier times (rejected steps). Those are not a
+% new run: the state is simply not moved backwards. Only a jump back by more than
+% t_reset_jump (0.5 s) starts a new track.
+if isempty(S) || t < S.t_call - CFG.t_reset_jump
     S = new_track(t);
 end
-S.t_call = t;
+S.t_call = max(S.t_call, t);
 
 % ---------------- bring the state up to time t (D16) ----------------
 if S.have
@@ -97,7 +104,7 @@ if S.have
         S.P = (S.P + S.P') / 2;
     end
 end
-S.t_state = t;
+S.t_state = max(S.t_state, t);           % never moves backwards
 
 % ---------------- use the radar reading if it is new ----------------
 is_new = ~isempty(meas_valid) && logical(meas_valid(1)) ...
@@ -129,7 +136,7 @@ if is_new
         S.P = (S.P + S.P') / 2;
     end
     S.n_upd = S.n_upd + 1;
-    S.t_meas = t;
+    S.t_meas = max(S.t_meas, t);
     S.last_r = r_meas;
     S.last_th = theta_meas;
 end
@@ -253,10 +260,15 @@ CFG.sigma_r = p.sigma_r;
 CFG.sigma_theta = p.sigma_theta;
 CFG.t_p = p.t_p;
 CFG.dt_radar = p.dt_radar;
+if isfield(p, 't_reset_jump')
+    CFG.t_reset_jump = p.t_reset_jump;   % same rule as turret_controller (D19)
+else
+    CFG.t_reset_jump = 0.5;
+end
 
 % Defaults (Candidate values; frozen values move to params.m).
-D.est_model = 'singer';      % 'CA' or 'singer' (Singer chosen 2026-11-09, worst-case rule)
-D.est_q_ca = 250;            % CA random-jerk intensity [m^2/s^5] (best CA in the sweep)
+D.est_model = 'singer';      % final design: Singer (chosen over CA by the sweep, worst-case rule)
+D.est_q_ca = 250;            % CA jerk intensity [m^2/s^5]; comparison runs only, not used
 D.est_sigma_m = 10;          % Singer typical acceleration per axis [m/s^2]
 D.est_tau_a = 1.0;           % Singer acceleration fade time [s]
 D.est_sigma_v0 = p.v_max;    % speed uncertainty at the first reading [m/s]

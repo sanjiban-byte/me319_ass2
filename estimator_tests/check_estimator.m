@@ -8,6 +8,8 @@ function check_estimator()
 %   4. Automatic reset when t goes back to 0 (D12) equals an explicit reset.
 %   5. A misspelt tunable name in 'config' is an error.
 %   6. Before the first reading all numbers are NaN and valid = false.
+%   7. A small step back in time (ODE solver, rejected step) keeps the track
+%      (decision D19): only a jump back of more than 0.5 s starts a new track.
 
 here = fileparts(mfilename('fullpath'));
 addpath(fileparts(here));
@@ -72,6 +74,18 @@ estimator_step('reset');
 est = estimator_step(0, 0, 0, 0);
 allok = report('6. no reading yet: NaN outputs, valid = false', ...
     isnan(est.theta_hat) && isnan(est.theta_pred) && ~est.valid) && allok;
+
+% 7 ---------------------------------------------------------------
+estimator_step('config');
+estimator_step('reset');
+for k = 1:21                            % readings at 0 ... 1.00 s
+    estimator_step((k - 1) * 0.05, z(k), a(k), 1);
+end
+e1 = estimator_step(1.0503, NaN, NaN, 0);           % a call just after the 1.05 s instant
+e2 = estimator_step(1.05, z(22), a(22), 1);         % then the 1.05 s reading itself
+allok = report(sprintf(['7. small step back keeps the track: readings used %d -> %d, ' ...
+    'valid %d'], e1.n_updates, e2.n_updates, e2.valid), ...
+    e2.n_updates == e1.n_updates + 1 && e2.valid) && allok;
 
 if allok
     fprintf('\nALL CHECKS PASSED\n');
